@@ -27,28 +27,14 @@ try:
 except ImportError:
     from distutils.core import setup
 
-classifiers = ['Development Status :: 4 - Beta',
-               'Operating System :: POSIX :: Linux',
-               'License :: OSI Approved :: MIT License',
-               'Intended Audience :: Developers',
-               'Programming Language :: Python :: 2.6',
-               'Programming Language :: Python :: 2.7',
-               'Programming Language :: Python :: 3',
-               'Topic :: Software Development',
-               'Topic :: System :: Hardware']
-
 setup(
     name='pmw3901',
     version='0.0.1',
-    author='Philip Howard',
-    author_email='phil@pimoroni.com',
-    description="""Python library for the PMW3901 optical flow sensor""",
-    long_description=open('README.rst').read() + '\n' + open('CHANGELOG.txt').read(),
+    author='Mikael Harseno',
+    description="""Python library for the PMW3901 optical flow sensor, for Jetson GPIO SPI. Forked from pimoroni pmw3901-python by Philip Howard""",
     license='MIT',
-    keywords='Raspberry Pi',
-    url='http://www.pimoroni.com',
-    project_urls={'GitHub': 'https://www.github.com/pimoroni/pmw3901-python'},
-    classifiers=classifiers,
+    keywords='Jetson TX',
+    project_urls={'GitHub': 'https://www.github.com/mikaelharseno/pmw3901-jetson-gpio'},
     packages=['pmw3901'],
     install_requires=['spidev']
 )

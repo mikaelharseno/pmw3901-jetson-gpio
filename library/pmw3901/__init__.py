@@ -2,13 +2,15 @@ import time
 import struct
 import spidev
 import RPi.GPIO as GPIO
+from sysfs.gpio import Controller, OUTPUT, INPUT, RISING 
 
 __version__ = '0.0.1'
 
+Controller.available_pins = [19, 21, 23, 24]
+
 WAIT = -1
 
-BG_CS_FRONT_BCM = 7
-BG_CS_BACK_BCM = 8
+BG_CS_FRONT_BCM = 24
 
 REG_ID = 0x00
 REG_DATA_READY = 0x02
@@ -18,20 +20,18 @@ REG_ORIENTATION = 0x5b
 
 
 class PMW3901():
-    def __init__(self, spi_port=0, spi_cs=1, spi_cs_gpio=BG_CS_FRONT_BCM):
+    def __init__(self, spi_port=0, spi_cs=192, spi_cs_gpio=BG_CS_FRONT_BCM):
         self.spi_cs_gpio = spi_cs_gpio
         self.spi_dev = spidev.SpiDev()
         self.spi_dev.open(spi_port, spi_cs)
         self.spi_dev.max_speed_hz = 400000
         self.spi_dev.no_cs = True
 
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.spi_cs_gpio, GPIO.OUT)
+        self.cs_pin = Controller.alloc_pin(24, OUTPUT)
 
-        GPIO.output(self.spi_cs_gpio, 0)
+        self.cs_pin.reset()
         time.sleep(0.05)
-        GPIO.output(self.spi_cs_gpio, 1)
+        self.cs_pin.set()
 
         self._write(REG_POWER_UP_RESET, 0x5a)
         time.sleep(0.02)
@@ -100,9 +100,9 @@ class PMW3901():
         """
         t_start = time.time()
         while time.time() - t_start < timeout:
-            GPIO.output(self.spi_cs_gpio, 0)
+            self.cs_pin.reset()
             data = self.spi_dev.xfer2([REG_MOTION_BURST] + [0 for x in range(12)])
-            GPIO.output(self.spi_cs_gpio, 1)
+            self.cs_pin.set()
             (_, dr, obs,
              x, y, quality,
              raw_sum, raw_max, raw_min,
@@ -136,16 +136,16 @@ class PMW3901():
         raise RuntimeError("Timed out waiting for motion data.")
 
     def _write(self, register, value):
-        GPIO.output(self.spi_cs_gpio, 0)
+        self.cs_pin.reset()
         self.spi_dev.xfer2([register | 0x80, value])
-        GPIO.output(self.spi_cs_gpio, 1)
+        self.cs_pin.set()
 
     def _read(self, register, length=1):
         result = []
         for x in range(length):
-            GPIO.output(self.spi_cs_gpio, 0)
+            self.cs_pin.reset()
             value = self.spi_dev.xfer2([register + x, 0])
-            GPIO.output(self.spi_cs_gpio, 1)
+            self.cs_pin.set()
             result.append(value[1])
 
         if length == 1:
@@ -307,7 +307,7 @@ if __name__ == "__main__":
                         default=0, choices=[0, 90, 180, 270],
                         help='Rotation of sensor in degrees.', )
     args = parser.parse_args()
-    flo = PMW3901(spi_port=0, spi_cs=1, spi_cs_gpio=BG_CS_FRONT_BCM)
+    flo = PMW3901(spi_port=0, spi_cs=192, spi_cs_gpio=BG_CS_FRONT_BCM)
     flo.set_rotation(args.rotation)
     tx = 0
     ty = 0
