@@ -1,16 +1,16 @@
 import time
 import struct
 import spidev
-import RPi.GPIO as GPIO
 from sysfs.gpio import Controller, OUTPUT, INPUT, RISING 
 
 __version__ = '0.0.1'
 
-Controller.available_pins = [19, 21, 23, 24]
+# 429 is 19 (MOSI), 428 is 21 (MISO), 427 is 23 (SCK), 430 is 24 (CS 0)
+Controller.available_pins = [429, 428, 427, 430]
 
 WAIT = -1
 
-BG_CS_FRONT_BCM = 24
+BG_CS_FRONT_BCM = 430
 
 REG_ID = 0x00
 REG_DATA_READY = 0x02
@@ -22,12 +22,13 @@ REG_ORIENTATION = 0x5b
 class PMW3901():
     def __init__(self, spi_port=0, spi_cs=192, spi_cs_gpio=BG_CS_FRONT_BCM):
         self.spi_cs_gpio = spi_cs_gpio
+
         self.spi_dev = spidev.SpiDev()
         self.spi_dev.open(spi_port, spi_cs)
         self.spi_dev.max_speed_hz = 400000
         self.spi_dev.no_cs = True
 
-        self.cs_pin = Controller.alloc_pin(24, OUTPUT)
+        self.cs_pin = Controller.alloc_pin(self.spi_cs_gpio, OUTPUT)
 
         self.cs_pin.reset()
         time.sleep(0.05)
@@ -307,7 +308,7 @@ if __name__ == "__main__":
                         default=0, choices=[0, 90, 180, 270],
                         help='Rotation of sensor in degrees.', )
     args = parser.parse_args()
-    flo = PMW3901(spi_port=0, spi_cs=192, spi_cs_gpio=BG_CS_FRONT_BCM)
+    flo = PMW3901(spi_port=0, spi_cs=193, spi_cs_gpio=BG_CS_FRONT_BCM)
     flo.set_rotation(args.rotation)
     tx = 0
     ty = 0
